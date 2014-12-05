@@ -3,7 +3,7 @@
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/Common/interface/TriggerNames.h"
 #include "DataFormats/HLTReco/interface/TriggerObject.h"
-#include "HLTriggerOffline/SUSYBSM/interface/RazorTriggerAnalyzerMuon.h"
+#include "HLTriggerOffline/RazorTriggerAnalyzer/interface/RazorTriggerAnalyzerMuon.h"
 
 RazorTriggerAnalyzerMuon::RazorTriggerAnalyzerMuon(const edm::ParameterSet& ps)
 {
