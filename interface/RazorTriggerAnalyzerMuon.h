@@ -58,11 +58,14 @@ class RazorTriggerAnalyzerMuon: public EDAnalyzer{
   edm::EDGetTokenT<edm::View<reco::MET> > thePfMETCollection_;
   edm::EDGetTokenT<edm::View<reco::MET> > theCaloMETCollection_;
   edm::EDGetTokenT<edm::View<reco::MET> > theHLTMETCollection_;
+  edm::EDGetTokenT<edm::View<reco::MET> > theHLTMETJetIDCollection_;
+  edm::EDGetTokenT<edm::View<reco::MET> > theHLTPfMETCollection_;
   edm::EDGetTokenT<edm::TriggerResults> triggerResults_;
   edm::EDGetTokenT<trigger::TriggerEvent> theTrigSummary_;
   edm::EDGetTokenT<reco::PFJetCollection> thePfJetCollection_;
   edm::EDGetTokenT<reco::CaloJetCollection> theCaloJetCollection_;
   edm::EDGetTokenT<reco::CaloJetCollection> theHLTCaloJetCollection_;
+  edm::EDGetTokenT<reco::PFJetCollection> theHLTPFJetCollection_;
   edm::EDGetTokenT<reco::MuonCollection> theMuonCollection_;
   edm::EDGetTokenT<std::vector<math::XYZTLorentzVector> > theHemispheres_;
 
@@ -78,16 +81,18 @@ class RazorTriggerAnalyzerMuon: public EDAnalyzer{
   double MR, Rsq;
   double onlineMR, onlineRsq;
   double caloMR, caloRsq;
-  double pfHT, pfMET;
-  double caloMET, hltMET;
+  double pfHT, pfMET, hltPFMETProducer;
+  double caloMET, hltMET, hltMETJetID;
   bool hasFired;
   bool denomFired;
   int numMuons;
   int numMuonsPassed30;
   int numCaloJetsPassed30;
   int numHLTCaloJetsPassed30;
+  int numHLTPFJetsPassed30;
   double muonET;
   bool passedCaloDiJetCut;
+  bool passedPFDiJetCut;
 };
 
 #endif
