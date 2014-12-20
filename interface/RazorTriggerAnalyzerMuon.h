@@ -65,9 +65,11 @@ class RazorTriggerAnalyzerMuon: public EDAnalyzer{
   edm::EDGetTokenT<reco::PFJetCollection> thePfJetCollection_;
   edm::EDGetTokenT<reco::CaloJetCollection> theCaloJetCollection_;
   edm::EDGetTokenT<reco::CaloJetCollection> theHLTCaloJetCollection_;
+  edm::EDGetTokenT<reco::CaloJetCollection> theHLTCaloJetCollectionIDPassed_;
   edm::EDGetTokenT<reco::PFJetCollection> theHLTPFJetCollection_;
   edm::EDGetTokenT<reco::MuonCollection> theMuonCollection_;
   edm::EDGetTokenT<std::vector<math::XYZTLorentzVector> > theHemispheres_;
+  edm::EDGetTokenT<std::vector<math::XYZTLorentzVector> > theHemispheresCaloIDPassed_;
 
   std::string triggerPath_;
   edm::InputTag triggerFilter_;
@@ -81,6 +83,7 @@ class RazorTriggerAnalyzerMuon: public EDAnalyzer{
   double MR, Rsq;
   double onlineMR, onlineRsq;
   double caloMR, caloRsq;
+  double caloMRIDPassed, caloRsqIDPassed;
   double pfHT, pfMET, hltPFMETProducer;
   double caloMET, hltMET, hltMETJetID;
   bool hasFired;
@@ -89,9 +92,11 @@ class RazorTriggerAnalyzerMuon: public EDAnalyzer{
   int numMuonsPassed30;
   int numCaloJetsPassed30;
   int numHLTCaloJetsPassed30;
+  int numHLTCaloJetsIDPassed30;
   int numHLTPFJetsPassed30;
   double muonET;
   bool passedCaloDiJetCut;
+  bool passedCaloIDDiJetCut;
   bool passedPFDiJetCut;
 };
 

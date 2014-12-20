@@ -13,6 +13,7 @@ RazorTriggerAnalyzerMuon::RazorTriggerAnalyzerMuon(const edm::ParameterSet& ps)
   thePfMETCollection_ = consumes<edm::View<reco::MET> >(ps.getParameter<edm::InputTag>("pfMETCollection"));
   theCaloMETCollection_ = consumes<edm::View<reco::MET> >(ps.getParameter<edm::InputTag>("caloMETCollection"));
   theHemispheres_ = consumes<std::vector<math::XYZTLorentzVector> >(ps.getParameter<edm::InputTag>("hemispheres"));
+  theHemispheresCaloIDPassed_ = consumes<std::vector<math::XYZTLorentzVector> >(ps.getParameter<edm::InputTag>("hemispheresCaloIDPassed"));
   triggerResults_ = consumes<edm::TriggerResults>(ps.getParameter<edm::InputTag>("TriggerResults"));
   triggerPath_ = ps.getParameter<std::string>("TriggerPath");
   triggerFilter_ = ps.getParameter<edm::InputTag>("TriggerFilter");
@@ -20,6 +21,7 @@ RazorTriggerAnalyzerMuon::RazorTriggerAnalyzerMuon(const edm::ParameterSet& ps)
   thePfJetCollection_ = consumes<reco::PFJetCollection>(ps.getParameter<edm::InputTag>("pfJetCollection"));
   theCaloJetCollection_ = consumes<reco::CaloJetCollection>(ps.getParameter<edm::InputTag>("caloJetCollection"));
   theHLTCaloJetCollection_ = consumes<reco::CaloJetCollection>(ps.getParameter<edm::InputTag>("hltCaloJetCollection"));
+  theHLTCaloJetCollectionIDPassed_ = consumes<reco::CaloJetCollection>(ps.getParameter<edm::InputTag>("hltCaloJetCollectionIDPassed"));
   theHLTPFJetCollection_ = consumes<reco::PFJetCollection>(ps.getParameter<edm::InputTag>("hltPFJetCollection"));
   theMuonCollection_    = consumes<reco::MuonCollection>(ps.getParameter<edm::InputTag>("muonCollection"));
   theHLTMETCollection_ = consumes<edm::View<reco::MET> > (ps.getParameter<edm::InputTag>("hltMETCollection"));
@@ -40,6 +42,8 @@ RazorTriggerAnalyzerMuon::RazorTriggerAnalyzerMuon(const edm::ParameterSet& ps)
   outTree->Branch("onlineRsq", &onlineRsq, "onlineRsq/D");
   outTree->Branch("caloMR", &caloMR, "caloMR/D");
   outTree->Branch("caloRsq", &caloRsq, "caloRsq/D");
+  outTree->Branch("caloMRIDPassed", &caloMRIDPassed, "caloMRIDPassed/D");
+  outTree->Branch("caloRsqIDPassed", &caloRsqIDPassed, "caloRsqIDPassed/D");
   outTree->Branch("pfHT", &pfHT, "pfHT/D");
   outTree->Branch("pfMET", &pfMET, "pfMET/D");
   outTree->Branch("caloMET", &caloMET, "caloMET/D");
@@ -52,9 +56,11 @@ RazorTriggerAnalyzerMuon::RazorTriggerAnalyzerMuon(const edm::ParameterSet& ps)
   outTree->Branch("numMuonsPassed30", &numMuonsPassed30, "numMuonsPassed30/I");
   outTree->Branch("numCaloJetsPassed30", &numCaloJetsPassed30, "numCaloJetsPassed30/I");
   outTree->Branch("numHLTCaloJetsPassed30", &numHLTCaloJetsPassed30, "numHLTCaloJetsPassed30/I");
+  outTree->Branch("numHLTCaloJetsIDPassed30", &numHLTCaloJetsIDPassed30, "numHLTCaloJetsIDPassed30/I");
   outTree->Branch("numHLTPFJetsPassed30", &numHLTPFJetsPassed30, "numHLTPFJetsPassed30/I");
   outTree->Branch("muonET", &muonET, "muonET/D");
   outTree->Branch("passedCaloDiJetCut", &passedCaloDiJetCut, "passedCaloDiJetCut/O");
+  outTree->Branch("passedCaloIDDiJetCut", &passedCaloIDDiJetCut, "passedCaloIDDiJetCut/O");
   outTree->Branch("passedPFDiJetCut", &passedPFDiJetCut, "passedPFDiJetCut/O");
 
 }
@@ -85,6 +91,8 @@ void RazorTriggerAnalyzerMuon::analyze(edm::Event const& e, edm::EventSetup cons
   onlineRsq = -999.;
   caloMR = -999.;//online razor variables computed using calo quantities
   caloRsq = -999.;
+  caloMRIDPassed = -999;
+  caloRsqIDPassed = -999;
   pfHT = 0;
   pfMET = -999.;
   caloMET = -999.;
@@ -97,15 +105,21 @@ void RazorTriggerAnalyzerMuon::analyze(edm::Event const& e, edm::EventSetup cons
   numMuonsPassed30 = 0;
   numCaloJetsPassed30 = 0;
   numHLTCaloJetsPassed30 = 0;
+  numHLTCaloJetsIDPassed30 = 0;
   numHLTPFJetsPassed30 = 0;
   muonET = 0;
   passedCaloDiJetCut = false;
+  passedCaloIDDiJetCut = false;
   passedPFDiJetCut = false;
 
 
   // get hemispheres
   Handle< vector<math::XYZTLorentzVector> > hemispheres;
   e.getByToken (theHemispheres_,hemispheres);
+
+  //get hemispheres formed from calo jets passing ID
+  Handle< vector<math::XYZTLorentzVector> > hemispheresCaloIDPassed;
+  e.getByToken (theHemispheresCaloIDPassed_, hemispheresCaloIDPassed);
 
   // get the MET Collection
   edm::Handle<edm::View<reco::MET> > inputMet;
@@ -168,6 +182,14 @@ void RazorTriggerAnalyzerMuon::analyze(edm::Event const& e, edm::EventSetup cons
   e.getByToken (theHLTCaloJetCollection_,hltCaloJetCollection);
   if ( !hltCaloJetCollection.isValid() ){
     edm::LogError ("RazorTriggerAnalyzerMuon") << "invalid collection: HLT CaloJets" << "\n";
+    return;
+  }
+
+  //get hlt calojet "ID Passed" collection
+  edm::Handle<reco::CaloJetCollection> hltCaloJetCollectionIDPassed;
+  e.getByToken (theHLTCaloJetCollectionIDPassed_,hltCaloJetCollectionIDPassed);
+  if ( !hltCaloJetCollectionIDPassed.isValid() ){
+    edm::LogError ("RazorTriggerAnalyzerMuon") << "invalid collection: HLT CaloJets ID Passed" << "\n";
     return;
   }
 
@@ -292,6 +314,21 @@ void RazorTriggerAnalyzerMuon::analyze(edm::Event const& e, edm::EventSetup cons
   if (passed60 > 1) sublead_hltcalo = true;
   if ((lead_hltcalo == true) && (sublead_hltcalo == true)) passedCaloDiJetCut = true;
 
+  //number of hlt "ID passed" calojets that pass 30 Gev and 3.0 eta cut                                                                                                  
+  bool lead_hltcaloID = false;
+  int passed60ID = 0;
+  bool sublead_hltcaloID = false;
+  for (reco::CaloJetCollection::const_iterator i_hltcalojet = hltCaloJetCollectionIDPassed->begin(); i_hltcalojet != hltCaloJetCollectionIDPassed->end(); ++i_hltcalojet){
+    if (i_hltcalojet->pt() < 30) continue;
+    if (fabs(i_hltcalojet->eta()) > 3.0) continue;    
+    // requirements for passing dijet cut
+    if (i_hltcalojet->pt() > 60) passed60ID++;
+    if (i_hltcalojet->pt() > 70) lead_hltcaloID = true;
+    numHLTCaloJetsIDPassed30 += 1;
+  }
+  cout << "NumberHLTCaloJetsIDPassed: " << numHLTCaloJetsIDPassed30 << endl;
+  if (passed60ID > 1) sublead_hltcaloID = true;
+  if ((lead_hltcaloID == true) && (sublead_hltcaloID == true)) passedCaloIDDiJetCut = true;
 
   //number of hlt pfjets that pass 30 Gev and 3.0 eta cut                                                                                         
                                                                                                                                                     
@@ -317,7 +354,20 @@ void RazorTriggerAnalyzerMuon::analyze(edm::Event const& e, edm::EventSetup cons
       return;
   }
 
-  if(hasFired && denomFired){
+  if(denomFired){ //compute razor variables and fill the tree
+
+      //dummy vector (this trigger does not care about muons)
+      std::vector<math::XYZTLorentzVector> muonVec;
+
+      //compute razor variables using calo jets passing ID
+      if(hemispheresCaloIDPassed->size() > 1){
+          TLorentzVector jaCaloID(hemispheresCaloIDPassed->at(0).x(),hemispheresCaloIDPassed->at(0).y(),hemispheresCaloIDPassed->at(0).z(),hemispheresCaloIDPassed->at(0).t());
+          TLorentzVector jbCaloID(hemispheresCaloIDPassed->at(1).x(),hemispheresCaloIDPassed->at(1).y(),hemispheresCaloIDPassed->at(1).z(),hemispheresCaloIDPassed->at(1).t());
+
+          caloMRIDPassed = CalcMR(jaCaloID, jbCaloID);
+          double RCaloIDPassed = CalcR(caloMRIDPassed, jaCaloID, jbCaloID, inputHLTMetJetID, muonVec);
+          caloRsqIDPassed = RCaloIDPassed*RCaloIDPassed;
+      }
 
       if(hemispheres->size() ==0){  // the Hemisphere Maker will produce an empty collection of hemispheres if the number of jets in the
           edm::LogError("RazorTriggerAnalyzerMuon") << "Cannot calculate M_R and R^2 because there are too many jets! (trigger passed automatically without forming the hemispheres)" << endl;
@@ -333,9 +383,6 @@ void RazorTriggerAnalyzerMuon::analyze(edm::Event const& e, edm::EventSetup cons
       TLorentzVector ja(hemispheres->at(0).x(),hemispheres->at(0).y(),hemispheres->at(0).z(),hemispheres->at(0).t());
       TLorentzVector jb(hemispheres->at(1).x(),hemispheres->at(1).y(),hemispheres->at(1).z(),hemispheres->at(1).t());
 
-      //dummy vector (this trigger does not care about muons)
-      std::vector<math::XYZTLorentzVector> muonVec;
-
       // where we calculate M_R and R^2 
 
       MR = CalcMR(ja,jb);
@@ -344,27 +391,6 @@ void RazorTriggerAnalyzerMuon::analyze(edm::Event const& e, edm::EventSetup cons
 
       outTree->Fill();
   } 
-  else if(denomFired){ //calculate M_R and R^2 for the denominator histograms
-
-      if(hemispheres->size() ==0){  // the Hemisphere Maker will produce an empty collection of hemispheres if the number of jets in the event is larger than the threshold.  In this case we cannot compute razor variables
-          return;
-      }
-
-      if(hemispheres->size() != 0 && hemispheres->size() != 2 && hemispheres->size() != 5 && hemispheres->size() != 10){
-          return;
-      }
-
-      TLorentzVector ja(hemispheres->at(0).x(),hemispheres->at(0).y(),hemispheres->at(0).z(),hemispheres->at(0).t());
-      TLorentzVector jb(hemispheres->at(1).x(),hemispheres->at(1).y(),hemispheres->at(1).z(),hemispheres->at(1).t());
-      //dummy vector (this trigger does not care about muons)
-      std::vector<math::XYZTLorentzVector> muonVec;
-
-      MR = CalcMR(ja,jb);
-      double R  = CalcR(MR,ja,jb,inputMet,muonVec);
-      Rsq = R*R;    
-
-      outTree->Fill();
-  }
 }
 
 void RazorTriggerAnalyzerMuon::endLuminosityBlock(edm::LuminosityBlock const& lumiSeg, edm::EventSetup const& eSetup)

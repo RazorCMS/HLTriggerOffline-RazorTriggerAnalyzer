@@ -15,15 +15,17 @@ process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 #get hemispheres and MET
 process.load("RecoMET.METProducers.PFMET_cfi")
-process.load("HLTriggerOffline.SUSYBSM.razorHemispheres_cff")
+process.load("HLTriggerOffline.RazorTriggerAnalyzer.razorHemispheres_cff")
+
+#hemispheres for calo jets passing ID
+process.hemispheresCaloIDPassed = process.hemispheres.clone(inputTag = cms.InputTag("hltAK4CaloJetsCorrectedIDPassed"), minJetPt = cms.double(30))
 
 #define input
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(30000) )
 
 
 myfilelist = cms.untracked.vstring()
-myfilelist.extend(['root://xrootd.unl.edu//store/user/jduarte/QCD_Pt-120to170/hlt_DIGI_L1_DIGI2RAW_RAW2DIGI_RECO_HLT_1002_1_yQa.roo\
-t',  
+myfilelist.extend(['root://xrootd.unl.edu://store/user/jduarte/QCD_Pt-120to170/hlt_DIGI_L1_DIGI2RAW_RAW2DIGI_RECO_HLT_951_1_qu1.root',  
 ])
 process.source = cms.Source("PoolSource",
                             fileNames = myfilelist
@@ -54,20 +56,22 @@ process.razorTriggerAnalysis = cms.EDAnalyzer("RazorTriggerAnalyzerMuon",
   trigSummary = cms.InputTag("hltTriggerSummaryAOD"),
   pfMETCollection = cms.InputTag("pfMet"),
   caloMETCollection = cms.InputTag("caloMet"),                                              
-  hltMETCollection = cms.InputTag("hltMet"),
-  hltMETJetIDCollection = cms.InputTag("hltMetCleanJetID"),
+  hltMETCollection = cms.InputTag("hltMet", '', 'reHLT'),
+  hltMETJetIDCollection = cms.InputTag("hltMetCleanUsingJetID", '', 'reHLT'),
   hltPFMETCollection = cms.InputTag("hltPFMETProducer"),                                              
   muonCollection = cms.InputTag('muons'),                                              
   pfJetCollection = cms.InputTag("ak4PFJetsCHS"),
   caloJetCollection = cms.InputTag("ak4CaloJets"),                                              
   hltCaloJetCollection = cms.InputTag("hltAK4CaloJetsCorrected"),
+  hltCaloJetCollectionIDPassed = cms.InputTag("hltAK4CaloJetsCorrectedIDPassed"),
   hltPFJetCollection = cms.InputTag("hltAK4PFJetsCorrected"),                                              
   TriggerResults = cms.InputTag('TriggerResults','','reHLT'),
   TriggerPath = cms.string('HLT_RsqMR300_Rsq0p09_MR200_v1'),
   TriggerFilter = cms.InputTag('hltRsqMR300Rsq0p09MR200', '', 'reHLT'), #the last filter in the path
   #CaloFilter = cms.InputTag('hltRsqMRNoMinRsqNoMinMRNoMinCalo', '', 'reHLT'), #filter implementing cuts on calo MR and Rsq
   CaloFilter = cms.InputTag('hltRsqMR200Rsq0p01MR100Calo', '', 'reHLT'), #filter implementing cuts on calo MR and Rsq 
-  hemispheres = cms.InputTag('hemispheres')
+  hemispheres = cms.InputTag('hemispheres'),
+  hemispheresCaloIDPassed = cms.InputTag('hemispheresCaloIDPassed')
   )
 
 #define messagelogger (controls verbosity of the module)
