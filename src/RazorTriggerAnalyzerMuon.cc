@@ -141,8 +141,8 @@ void RazorTriggerAnalyzerMuon::analyze(edm::Event const& e, edm::EventSetup cons
   edm::Handle<edm::View<reco::MET> > inputHLTMet;
   e.getByToken(theHLTMETCollection_,inputHLTMet);
   if ( !inputHLTMet.isValid() ){
-    edm::LogError ("RazorTriggerAnalyzerMuon") << "invalid collection: HLTMET" << "\n";
-    return;
+    //edm::LogError ("RazorTriggerAnalyzerMuon") << "invalid collection: HLTMET" << "\n";
+    //return;
   }
 
   // get the HLT MET JetID Collection                                                                                   
@@ -157,8 +157,8 @@ void RazorTriggerAnalyzerMuon::analyze(edm::Event const& e, edm::EventSetup cons
   edm::Handle<edm::View<reco::MET> > inputHLTPFMet;
   e.getByToken(theHLTPfMETCollection_,inputHLTPFMet);
   if ( !inputHLTPFMet.isValid() ){
-    edm::LogError ("RazorTriggerAnalyzerMuon") << "invalid collection: HLTPFMET" << "\n";
-    return;
+    //edm::LogError ("RazorTriggerAnalyzerMuon") << "invalid collection: HLTPFMET" << "\n";
+    //return;
   }
 
   //get the jet collection
@@ -197,8 +197,8 @@ void RazorTriggerAnalyzerMuon::analyze(edm::Event const& e, edm::EventSetup cons
   edm::Handle<reco::PFJetCollection> hltPFJetCollection;
   e.getByToken (theHLTPFJetCollection_,hltPFJetCollection);
   if ( !hltPFJetCollection.isValid() ){
-    edm::LogError ("RazorTriggerAnalyzerMuon") << "invalid collection: HLT PFJets" << "\n";
-    return;
+    //edm::LogError ("RazorTriggerAnalyzerMuon") << "invalid collection: HLT PFJets" << "\n";
+   // return;
   }
 
   //get the muon collection
@@ -258,8 +258,8 @@ void RazorTriggerAnalyzerMuon::analyze(edm::Event const& e, edm::EventSetup cons
           }
       }
   }
-  //std::string denomPath = "HLT_ZeroBias_v1"; //reference trigger
-  std::string denomPath = "HLT_Ele27_eta2p1_WP85_Gsf_v1"; //trigger path used as a reference for computing turn-ons and efficiencies
+  std::string denomPath = "HLT_ZeroBias_v1"; //reference trigger
+  //std::string denomPath = "HLT_Ele27_eta2p1_WP85_Gsf_v1"; //trigger path used as a reference for computing turn-ons and efficiencies
   const edm::TriggerNames& trigNames = e.triggerNames(*hltresults);
   unsigned int numTriggers = trigNames.size();
   //loop over fired triggers and look for razor trigger and/or reference electron trigger
@@ -279,7 +279,7 @@ void RazorTriggerAnalyzerMuon::analyze(edm::Event const& e, edm::EventSetup cons
   caloMET = (inputCaloMet->front()).pt(); // check this
   hltMET = (inputHLTMet->front()).pt(); // check this  
   hltMETJetID = (inputHLTMetJetID->front()).pt(); // check this                                                 
-  hltPFMETProducer = (inputHLTPFMet->front()).pt();
+  if(inputHLTPFMet.isValid()) hltPFMETProducer = (inputHLTPFMet->front()).pt();
 
   // count muons
   for (reco::MuonCollection::const_iterator i_muon = muonCollection->begin(); i_muon != muonCollection->end(); ++i_muon){
@@ -303,6 +303,7 @@ void RazorTriggerAnalyzerMuon::analyze(edm::Event const& e, edm::EventSetup cons
   int passed60 = 0;
   bool sublead_hltcalo = false;
   for (reco::CaloJetCollection::const_iterator i_hltcalojet = hltCaloJetCollection->begin(); i_hltcalojet != hltCaloJetCollection->end(); ++i_hltcalojet){
+      cout << "CaloJet: " << i_hltcalojet->pt() << endl;
     if (i_hltcalojet->pt() < 30) continue;
     if (fabs(i_hltcalojet->eta()) > 3.0) continue;    
     // requirements for passing dijet cut
@@ -319,6 +320,7 @@ void RazorTriggerAnalyzerMuon::analyze(edm::Event const& e, edm::EventSetup cons
   int passed60ID = 0;
   bool sublead_hltcaloID = false;
   for (reco::CaloJetCollection::const_iterator i_hltcalojet = hltCaloJetCollectionIDPassed->begin(); i_hltcalojet != hltCaloJetCollectionIDPassed->end(); ++i_hltcalojet){
+      cout << "CaloJetIDPassed: " << i_hltcalojet->pt() << endl;
     if (i_hltcalojet->pt() < 30) continue;
     if (fabs(i_hltcalojet->eta()) > 3.0) continue;    
     // requirements for passing dijet cut
@@ -335,7 +337,7 @@ void RazorTriggerAnalyzerMuon::analyze(edm::Event const& e, edm::EventSetup cons
   bool lead_hltpf = false;
   int pfpassed60 = 0;
   bool sublead_hltpf = false;
-  for (reco::PFJetCollection::const_iterator i_hltpfjet = hltPFJetCollection->begin(); i_hltpfjet != hltPFJetCollection->end(); ++i_hltpfjet){
+/*  for (reco::PFJetCollection::const_iterator i_hltpfjet = hltPFJetCollection->begin(); i_hltpfjet != hltPFJetCollection->end(); ++i_hltpfjet){
     if (i_hltpfjet->pt() < 30) continue;
     if (fabs(i_hltpfjet->eta()) > 3.0) continue;
     // requirements for passing dijet cut                                                                                                            
@@ -343,6 +345,7 @@ void RazorTriggerAnalyzerMuon::analyze(edm::Event const& e, edm::EventSetup cons
     if (i_hltpfjet->pt() > 70) lead_hltpf = true;
     numHLTPFJetsPassed30 += 1;
   }
+*/
   if (pfpassed60 > 1) sublead_hltpf = true;
   if ((lead_hltpf == true) && (sublead_hltpf == true)) passedPFDiJetCut = true;
 
@@ -353,6 +356,13 @@ void RazorTriggerAnalyzerMuon::analyze(edm::Event const& e, edm::EventSetup cons
       edm::LogError("RazorTriggerAnalyzerMuon") << "Hemisphere object is invalid!" << "\n";
       return;
   }
+
+  //check calo hemispheres
+  if (not hemispheresCaloIDPassed.isValid()){
+      edm::LogError("RazorTriggerAnalyzerMuon") << "Calo Hemisphere object is invalid!" << "\n";
+      return;
+  }
+
 
   if(denomFired){ //compute razor variables and fill the tree
 

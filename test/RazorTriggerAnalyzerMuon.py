@@ -18,14 +18,25 @@ process.load("RecoMET.METProducers.PFMET_cfi")
 process.load("HLTriggerOffline.RazorTriggerAnalyzer.razorHemispheres_cff")
 
 #hemispheres for calo jets passing ID
-process.hemispheresCaloIDPassed = process.hemispheres.clone(inputTag = cms.InputTag("hltAK4CaloJetsCorrectedIDPassed"), minJetPt = cms.double(30))
+process.hemispheresCaloIDPassed = process.hemispheres.clone(inputTag = cms.InputTag("hltAK4CaloJetsCorrectedIDPassed"), minJetPt = cms.double(30), maxNJ = cms.int32(20))
 
 #define input
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(30000) )
 
 
 myfilelist = cms.untracked.vstring()
-myfilelist.extend(['root://xrootd.unl.edu://store/user/jduarte/QCD_Pt-120to170/hlt_DIGI_L1_DIGI2RAW_RAW2DIGI_RECO_HLT_951_1_qu1.root',  
+myfilelist.extend(['root://xrootd.unl.edu:///store/user/duanders/QCD_Pt-300to470_Tune4C_13TeV_pythia8/crab_triggerStudies_QCD300to470_v1/141220_091517/0000/hlt_DIGI_L1_DIGI2RAW_RAW2DIGI_RECO_HLT_102.root',
+    'root://xrootd.unl.edu:///store/user/duanders/QCD_Pt-300to470_Tune4C_13TeV_pythia8/crab_triggerStudies_QCD300to470_v1/141220_091517/0000/hlt_DIGI_L1_DIGI2RAW_RAW2DIGI_RECO_HLT_103.root',
+    'root://xrootd.unl.edu:///store/user/duanders/QCD_Pt-300to470_Tune4C_13TeV_pythia8/crab_triggerStudies_QCD300to470_v1/141220_091517/0000/hlt_DIGI_L1_DIGI2RAW_RAW2DIGI_RECO_HLT_104.root',
+    'root://xrootd.unl.edu:///store/user/duanders/QCD_Pt-300to470_Tune4C_13TeV_pythia8/crab_triggerStudies_QCD300to470_v1/141220_091517/0000/hlt_DIGI_L1_DIGI2RAW_RAW2DIGI_RECO_HLT_105.root',
+    'root://xrootd.unl.edu:///store/user/duanders/QCD_Pt-300to470_Tune4C_13TeV_pythia8/crab_triggerStudies_QCD300to470_v1/141220_091517/0000/hlt_DIGI_L1_DIGI2RAW_RAW2DIGI_RECO_HLT_106.root',
+    'root://xrootd.unl.edu:///store/user/duanders/QCD_Pt-300to470_Tune4C_13TeV_pythia8/crab_triggerStudies_QCD300to470_v1/141220_091517/0000/hlt_DIGI_L1_DIGI2RAW_RAW2DIGI_RECO_HLT_109.root',
+    'root://xrootd.unl.edu:///store/user/duanders/QCD_Pt-300to470_Tune4C_13TeV_pythia8/crab_triggerStudies_QCD300to470_v1/141220_091517/0000/hlt_DIGI_L1_DIGI2RAW_RAW2DIGI_RECO_HLT_111.root',
+    'root://xrootd.unl.edu:///store/user/duanders/QCD_Pt-300to470_Tune4C_13TeV_pythia8/crab_triggerStudies_QCD300to470_v1/141220_091517/0000/hlt_DIGI_L1_DIGI2RAW_RAW2DIGI_RECO_HLT_112.root',
+    'root://xrootd.unl.edu:///store/user/duanders/QCD_Pt-300to470_Tune4C_13TeV_pythia8/crab_triggerStudies_QCD300to470_v1/141220_091517/0000/hlt_DIGI_L1_DIGI2RAW_RAW2DIGI_RECO_HLT_113.root',
+    'root://xrootd.unl.edu:///store/user/duanders/QCD_Pt-300to470_Tune4C_13TeV_pythia8/crab_triggerStudies_QCD300to470_v1/141220_091517/0000/hlt_DIGI_L1_DIGI2RAW_RAW2DIGI_RECO_HLT_114.root',
+    'root://xrootd.unl.edu:///store/user/duanders/QCD_Pt-300to470_Tune4C_13TeV_pythia8/crab_triggerStudies_QCD300to470_v1/141220_091517/0000/hlt_DIGI_L1_DIGI2RAW_RAW2DIGI_RECO_HLT_115.root',
+    'root://xrootd.unl.edu:///store/user/duanders/QCD_Pt-300to470_Tune4C_13TeV_pythia8/crab_triggerStudies_QCD300to470_v1/141220_091517/0000/hlt_DIGI_L1_DIGI2RAW_RAW2DIGI_RECO_HLT_117.root',  
 ])
 process.source = cms.Source("PoolSource",
                             fileNames = myfilelist
@@ -82,4 +93,4 @@ process.MessageLogger = cms.Service("MessageLogger",
        cerr           = cms.untracked.PSet(threshold  = cms.untracked.string('WARNING') )
 )
 
-process.run_module = cms.Path(process.pfNoPileUpJMESequence*process.ak4PFJets*process.ak4PFJetsCHS*cms.ignore(process.hemispheres)*process.pfMet*process.razorTriggerAnalysis)
+process.run_module = cms.Path(process.pfNoPileUpJMESequence*process.ak4PFJets*process.ak4PFJetsCHS*cms.ignore(process.hemispheres)*cms.ignore(process.hemispheresCaloIDPassed)*process.pfMet*process.razorTriggerAnalysis)
